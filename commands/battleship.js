@@ -1,3 +1,6 @@
+// UNFINISHED
+// Coming soon...
+
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js')
 
 module.exports = {
@@ -41,14 +44,15 @@ module.exports = {
 
 		//await intr.reply('Look DM')
 
-		let fieldMessage
+		fieldMessage = await opponent.send('Обед')
+		/*let fieldMessage
 		const collector = opponent.dmChannel.createMessageComponentCollector({ time: 60_000 })
 		collector.on('collect', async i => {
 			collector.stop()
 			question.delete()
 			if (i.customId === 'y') {
-				await opponent.send('Обед')
-				playMove()
+				fieldMessage = await opponent.send('Обед')
+				placeShip()
 			} else if (i.customId === 'n')
 				intr.user.send(`Seems like ${opponent} doesn't want to play with you`)
 		})
@@ -58,32 +62,131 @@ module.exports = {
 				await question.edit({ content: 'Timeout exceeded', components: [] })
 				await intr.user.send('The opponent didn\'t respond')
 			}
-		})
+		})*/
 
 		const fields = [Array(10), Array(10)]
 		let fieldAscii
-		for (let i = 0; i < 2; i++) fields[i].forEach(row => {
-			row = Array(10)
-		})
-
-		const letters = ['🇦', '🇧', '🇨', '🇩', '🇪', '🇫', '🇬', '🇭', '🇮', '🇯']
-		const numbers = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣']
-
-		const playMove = () => {
-			redrawBoard()
-			intr.user.send(fieldAscii)
+		for (let i = 0; i < 2; i++) for (let k = 0; k < 10; k++) {
+			fields[i][k] = Array(10)
+			for (let l = 0; l < 10; l++) {
+				fields[i][k][l] = '┇ '
+			}
 		}
 
-		console.log(fields)
-		const redrawBoard = () => {
-			letters.forEach(l => fieldAscii += l)
+		const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+		const numbers = []
+		for (let i = 0; i < 10; i++) numbers[i] = i
 
-			fields[0].forEach((row, i) => {
-				fieldAscii += `\n${numbers[i]} `
-				row.forEach(() => {
-					fieldAscii += '⬛'
-				})
+		const ships = []
+		const maxShip = 4
+		for (let i = 0; i < maxShip; i++) {
+			ships[i] = [maxShip - i, i + 1]
+		} // result: [ 4, 1 ], [ 3, 2 ], [ 2, 3 ], [ 1, 4 ]
+
+		const placeShip = async () => {
+			const ship = ships.shift()
+			let row, col
+
+			redrawBoard()
+
+			await fieldMessage.edit('Enter coordinates to place your ship. Example: `h6`\n```fix\n' + fieldAscii + '```')
+
+			const regex = /[a-j][0-9]/i
+			const filter = m => m.content.match(regex)
+			const collector = intr.user.dmChannel.createMessageCollector({ filter, time: 60_000 })
+			collector.on('collect', async m => {
+				const cellCords = m.content.match(regex)[0].toUpperCase()
+				row = +cellCords[1]
+				col = letters.findIndex(l => l === cellCords[0])
+
+				fields[0][row][col] = '[]'
+				collector.stop()
+			})
+
+			collector.on('end', async collected => {
+				if (collected.size < 0) return intr.user.send('Timeout exceeded. Game is cancelled')
+				extendShip(ship, row, col)
 			})
 		}
+
+		let buttons = new ActionRowBuilder()
+			.addComponents(
+				new ButtonBuilder()
+					.setCustomId('left')
+					.setLabel('⬅️')
+					.setStyle(ButtonStyle.Primary),
+				new ButtonBuilder()
+					.setCustomId('right')
+					.setLabel('➡️')
+					.setStyle(ButtonStyle.Primary),
+				new ButtonBuilder()
+					.setCustomId('down')
+					.setLabel('⬇️')
+					.setStyle(ButtonStyle.Primary),
+				new ButtonBuilder()
+					.setCustomId('up')
+					.setLabel('⬆️')
+					.setStyle(ButtonStyle.Primary),
+			)
+
+		const extendShip = async (ship, row, col) => {
+			redrawBoard()
+
+			await fieldMessage.edit({ content: 'Choose a direction to extend the ship (arrows down below)\n```fix\n' + fieldAscii + '```', components: [buttons] })
+			const collector = intr.channel.createMessageComponentCollector({ time: 60_000 })
+			collector.on('collect', async i => {
+				switch (i.customId) {
+					case 'left':
+						for (let i = 0; i < ship[0]; i++) fields[0][row][col - i] = '[]'
+						break;
+					case 'right':
+						for (let i = 0; i < ship[0]; i++) fields[0][row][col + i] = '[]'
+						break;
+					case 'down':
+						for (let i = 0; i < ship[0]; i++) fields[0][row + i][col] = '[]'
+						break;
+					case 'up':
+						for (let i = 0; i < ship[0]; i++) fields[0][row - i][col] = '[]'
+						break;
+				}
+
+				redrawBoard()
+				collector.stop()
+			})
+
+			collector.on('end', async collected => {
+				if (collected.size < 0) return intr.user.send('Timeout exceeded. Game is cancelled')
+				moveShip()
+			})
+		}
+
+		const moveShip = async () => {
+			buttons.addComponents(
+				new ButtonBuilder()
+					.setCustomId('rotate')
+					.setLabel('🔄')
+					.setStyle(ButtonStyle.Primary),
+				new ButtonBuilder()
+					.setCustomId('turn')
+					.setLabel('↪️')
+					.setStyle(ButtonStyle.Primary),
+			)
+
+			await fieldMessage.edit({ content: 'Move and rotate your ship. Click ☑️ when you are done\n```fix\n' + fieldAscii + '```', components: [buttons] })
+			const collector = intr.channel.createMessageComponentCollector({ time: 60_000 })
+			collector.on('collect', async i => { })
+		}
+
+		const redrawBoard = () => {
+			fieldAscii = ' '
+			letters.forEach(l => fieldAscii += ' ' + l)
+
+			for (let i = 0; i < 10; i++) {
+				fieldAscii += `\n${numbers[i]} `
+				fieldAscii += fields[0][i].join('')
+			}
+		}
+
+		placeShip()
 	}
 }
