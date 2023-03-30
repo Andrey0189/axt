@@ -12,6 +12,7 @@ module.exports = {
 		required: true
 	}],
 	description: 'Play battleship',
+	private: true,
 	run: async (intr) => {
 		const opponent = intr.options.data[0].user
 		if (opponent.bot) return intr.reply({ content: 'You cannot play with bots, dumbass', ephemeral: true })
@@ -109,7 +110,7 @@ module.exports = {
 			})
 		}
 
-		let buttons = new ActionRowBuilder()
+		const buttons = new ActionRowBuilder()
 			.addComponents(
 				new ButtonBuilder()
 					.setCustomId('left')
@@ -161,16 +162,21 @@ module.exports = {
 		}
 
 		const moveShip = async () => {
-			buttons.addComponents(
-				new ButtonBuilder()
-					.setCustomId('rotate')
-					.setLabel('🔄')
-					.setStyle(ButtonStyle.Primary),
-				new ButtonBuilder()
-					.setCustomId('turn')
-					.setLabel('↪️')
-					.setStyle(ButtonStyle.Primary),
-			)
+			const buttons2 = new ActionRowBuilder()
+				.addComponents(
+					new ButtonBuilder()
+						.setCustomId('rotate')
+						.setLabel('🔄')
+						.setStyle(ButtonStyle.Primary),
+					new ButtonBuilder()
+						.setCustomId('turn')
+						.setLabel('↪️')
+						.setStyle(ButtonStyle.Primary),
+					new ButtonBuilder()
+						.setCustomId('turn')
+						.setLabel('↪️')
+						.setStyle(ButtonStyle.Primary),
+				)
 
 			await fieldMessage.edit({ content: 'Move and rotate your ship. Click ☑️ when you are done\n```fix\n' + fieldAscii + '```', components: [buttons] })
 			const collector = intr.channel.createMessageComponentCollector({ time: 60_000 })

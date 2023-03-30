@@ -43,6 +43,21 @@ module.exports = {
 			name: 'desc',
 			description: 'Embed description',
 		},
+		/*{
+			type: 3,
+			name: 'field-name',
+			description: 'Embed field title',
+		},
+		{
+			type: 3,
+			name: 'field-value',
+			description: 'Embed field text',
+		},
+		{
+			type: 5,
+			name: 'field-inline',
+			description: 'Make embed field inline?',
+		},*/
 		{
 			type: 3,
 			name: 'img',
@@ -74,7 +89,7 @@ module.exports = {
 		await intr.deferReply({ ephemeral: true })
 
 		const arg = (argument) => {
-			const found = intr.options.data.find(op => op.name === argument)
+			const found = intr.options.get(argument)
 			if (found) return found.value
 		}
 
@@ -88,6 +103,8 @@ module.exports = {
 				.setColor(check('color'))
 				.setThumbnail(check('thumbnail'))
 				.setDescription(check('desc'))
+				// Multiple fields coming soon
+				//.addFields({ name: check('field-name'), value: check('field-value'), inline: check('field-inline') })
 				.setImage(check('img'))
 				.setFooter({ text: check('footer-text'), iconURL: check('footer-icon') });
 
@@ -97,6 +114,7 @@ module.exports = {
 			intr.channel.send({ embeds: [embed] })
 			intr.editReply({ content: `Embed created successfully`, ephemeral: true })
 		} catch (err) {
+			console.log(err)
 			intr.editReply({ content: `Embed creating failed:\n\`\`\`js\n${err}\`\`\``, ephemeral: true })
 		}
 	}

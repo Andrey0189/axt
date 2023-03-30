@@ -14,17 +14,19 @@ module.exports = {
 		if (opponent.bot) return intr.reply({ content: 'You cannot play with bots, dumbass', ephemeral: true })
 		if (opponent.id === intr.user.id) return intr.reply({ content: 'You cannot play yourself, dumbass', ephemeral: true })
 
+		const newButton = (label, id, style) => {
+			return new ButtonBuilder()
+				.setCustomId(id)
+				.setLabel(label)
+				.setStyle(style ?? ButtonStyle.Primary)
+		}
+
 		const row = new ActionRowBuilder()
 			.addComponents(
-				new ButtonBuilder()
-					.setCustomId('y')
-					.setLabel('Yes')
-					.setStyle(ButtonStyle.Primary),
-				new ButtonBuilder()
-					.setCustomId('n')
-					.setLabel('No')
-					.setStyle(ButtonStyle.Danger),
+				newButton('Yes', 'y'),
+				newButton('No', 'n', ButtonStyle.Danger)
 			)
+
 		const question = await intr.reply({ content: `${opponent} start a tic-tac-toe game with ${intr.user}?`, components: [row] })
 		let fieldMessage
 
@@ -49,7 +51,11 @@ module.exports = {
 			['4', '5', '6'],
 			['7', '8', '9']
 		]
-		let fieldAscii
+
+		const fieldButtons = []
+		fieldButtons[3] = new ActionRowBuilder().addComponents(
+			newButton('Exit game', 'exit', ButtonStyle.Danger)
+		)
 
 		const syms = ['X', 'O']
 		const players = [opponent, intr.user]
@@ -57,30 +63,24 @@ module.exports = {
 
 		const playMove = async (player) => {
 			redrawBoard()
-			fieldMessage.edit(`${player}, your move. Write a number from 1 to 9\n\`\`\`css\n${fieldAscii}\n\`\`\``)
+			fieldMessage.edit({ content: `${player}, your move`, components: fieldButtons })
 
-			const filter = msg => {
-				const num = parseInt(msg.content)
-				return (msg.author.id === player.id && !isNaN(num) && num >= 1 && num <= 9)
+			const filter = i => {
+				return (i.message.id === fieldMessage.id && i.user.id === player.id)
 			}
 
-			const msgCollector = intr.channel.createMessageCollector({ filter, time: 60_000 })
-			msgCollector.on('collect', async msg => {
+			const collector = intr.channel.createMessageComponentCollector({ filter, idle: 60_000 })
+			collector.on('collect', async i => {
+				collector.stop()
+				await i.deferUpdate()
 
-				const num = parseInt(msg.content)
-
-				const row = Math.ceil(num / 3) - 1
-				const col = (num - 1) % 3
-				const cell = field[row][col]
-
-				if (isNaN(cell)) {
-					const reply = await msg.reply('This cell is taken')
-					setTimeout(() => reply.delete(), 5_000)
-					return msg.delete()
+				if (i.customId === 'exit') {
+					fieldMessage.edit({ content: `Game abandoned`, components: fieldButtons })
+					return intr.channel.send(`${player} exited the game`)
 				}
 
-				msgCollector.stop('got')
-				msg.delete()
+				const row = i.customId[0]
+				const col = i.customId[1]
 
 				field[row][col] = syms[sindex]
 
@@ -91,20 +91,40 @@ module.exports = {
 				playMove(players[sindex])
 			})
 
-			msgCollector.on('end', async collected => {
+			collector.on('end', async collected => {
 				if (collected.size < 1) await intr.channel.send('Timeout exceeded')
 			})
 		}
 
 		const redrawBoard = () => {
-			fieldAscii = field.map(row => row.join('|')).join('\n')
+			field.forEach((_, i) => {
+				fieldButtons[i] = new ActionRowBuilder()
+				field[i].forEach((_, j) => {
+					const label = field[i][j]
+					const id = '' + i + j
+					let style
+					let isDisabled = true
+					switch (label) {
+						case 'X':
+							style = ButtonStyle.Primary
+							break
+						case 'O':
+							style = ButtonStyle.Success
+							break
+						default:
+							style = ButtonStyle.Secondary
+							isDisabled = false
+					}
+
+					fieldButtons[i].addComponents(
+						newButton(label, id, style).setDisabled(isDisabled)
+					)
+
+				})
+			})
 		}
 
 		const checkWin = (sym) => {
-			if (field.every(row =>
-				row.every(cell =>
-					isNaN(cell)))) return 'draw'
-
 			for (let i = 0; i < 3; i++) {
 				if (
 					(field[i][0] === sym && field[i][1] === sym && field[i][2] === sym) ||
@@ -112,10 +132,14 @@ module.exports = {
 				) return true
 			}
 
-			return (
+			if (
 				(field[0][0] === sym && field[1][1] === sym && field[2][2] === sym) ||
 				(field[0][2] === sym && field[1][1] === sym && field[2][0] === sym)
-			)
+			) return true
+
+			if (field.every(row =>
+				row.every(cell =>
+					isNaN(cell)))) return 'draw'
 		}
 
 		const endGame = (result) => {
@@ -125,7 +149,7 @@ module.exports = {
 			if (result === 'draw') endText = 'Draw!'
 			else endText = `${players[sindex]} won!`
 
-			fieldMessage.edit(`${endText}\n\`\`\`css\n${fieldAscii}\n\`\`\``)
+			fieldMessage.edit({ content: endText, components: fieldButtons })
 		}
 	}
 }

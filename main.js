@@ -43,7 +43,7 @@ client.on('interactionCreate', async interaction => {
 
 	const command = commands.find(c => c.name === interaction.commandName)
 	if (command) {
-		if (command.private && !conf.whitelist.find(id => id === interaction.member.id)) return await interaction.reply('You don\'t have permission to execute this command')
+		if (command.private && !conf.whitelist.find(id => id === interaction.user.id)) return await interaction.reply('You don\'t have permission to execute this command')
 		command.run(interaction)
 	}
 })
