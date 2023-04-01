@@ -85,7 +85,12 @@ module.exports = {
 		} // result: [ 4, 1 ], [ 3, 2 ], [ 2, 3 ], [ 1, 4 ]
 
 		const placeShip = async () => {
-			const ship = ships.shift()
+			const ship = {
+				size: ships.shift(),
+				cords: [],
+				fulcrum: []
+			}
+
 			let row, col
 
 			redrawBoard()
@@ -133,23 +138,29 @@ module.exports = {
 		const extendShip = async (ship, row, col) => {
 			redrawBoard()
 
+			ship.cords.push([row, col])
+			let h = 0, v = 0
+
 			await fieldMessage.edit({ content: 'Choose a direction to extend the ship (arrows down below)\n```fix\n' + fieldAscii + '```', components: [buttons] })
 			const collector = intr.channel.createMessageComponentCollector({ time: 60_000 })
-			collector.on('collect', async i => {
+			collector.on('collect', i => {
 				switch (i.customId) {
 					case 'left':
-						for (let i = 0; i < ship[0]; i++) fields[0][row][col - i] = '[]'
+						h = -1
 						break;
 					case 'right':
-						for (let i = 0; i < ship[0]; i++) fields[0][row][col + i] = '[]'
+						h = 1
 						break;
 					case 'down':
-						for (let i = 0; i < ship[0]; i++) fields[0][row + i][col] = '[]'
+						v = 1
 						break;
 					case 'up':
-						for (let i = 0; i < ship[0]; i++) fields[0][row - i][col] = '[]'
+						v = -1
 						break;
 				}
+
+				for (let i = 1; i < ship[0]; i++) ship.cords.push([row += v, col += h])
+				ship.cords.forEach(cords => fields[0][cords[0]][cords[1]] = '[]')
 
 				redrawBoard()
 				collector.stop()
@@ -173,12 +184,16 @@ module.exports = {
 						.setLabel('↪️')
 						.setStyle(ButtonStyle.Primary),
 					new ButtonBuilder()
-						.setCustomId('turn')
-						.setLabel('↪️')
-						.setStyle(ButtonStyle.Primary),
+						.setCustomId('done')
+						.setLabel('☑️')
+						.setStyle(ButtonStyle.Success),
+					new ButtonBuilder()
+						.setCustomId('back')
+						.setLabel('Go back')
+						.setStyle(ButtonStyle.Danger),
 				)
 
-			await fieldMessage.edit({ content: 'Move and rotate your ship. Click ☑️ when you are done\n```fix\n' + fieldAscii + '```', components: [buttons] })
+			await fieldMessage.edit({ content: 'Move and rotate your ship. Click ☑️ when you are done\n```fix\n' + fieldAscii + '```', components: [buttons, buttons2] })
 			const collector = intr.channel.createMessageComponentCollector({ time: 60_000 })
 			collector.on('collect', async i => { })
 		}
