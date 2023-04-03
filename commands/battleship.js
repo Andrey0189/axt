@@ -25,19 +25,21 @@ module.exports = {
 			return intr.reply('I cannot send messages to your DM')
 		}
 
+		const newButton = (label, id, style) => {
+			return new ButtonBuilder()
+				.setCustomId(id)
+				.setLabel(label)
+				.setStyle(style ?? ButtonStyle.Primary)
+		}
+
 		let question
 		try {
 			const row = new ActionRowBuilder()
 				.addComponents(
-					new ButtonBuilder()
-						.setCustomId('y')
-						.setLabel('Yes')
-						.setStyle(ButtonStyle.Primary),
-					new ButtonBuilder()
-						.setCustomId('n')
-						.setLabel('No')
-						.setStyle(ButtonStyle.Danger),
+					newButton('Yes', 'y'),
+					newButton('No', 'n', ButtonStyle.Danger)
 				)
+
 			question = await opponent.send({ content: `${opponent} start a battleship game with ${intr.user}?`, components: [row] })
 		} catch (err) {
 			return intr.reply('I cannot send messages to your opponent\'s DM')
@@ -70,7 +72,15 @@ module.exports = {
 		for (let i = 0; i < 2; i++) for (let k = 0; k < 10; k++) {
 			fields[i][k] = Array(10)
 			for (let l = 0; l < 10; l++) {
-				fields[i][k][l] = '┇ '
+				fields[i][k][l] = 0
+				/*
+				 * 0 = empty
+				 * 1 = ship
+				 * 2 = miss
+				 * 3 = hit
+				 * 4 = mine?
+				 * 5 = minesweeper?
+				 */
 			}
 		}
 
@@ -84,12 +94,17 @@ module.exports = {
 			ships[i] = [maxShip - i, i + 1]
 		} // result: [ 4, 1 ], [ 3, 2 ], [ 2, 3 ], [ 1, 4 ]
 
-		const placeShip = async () => {
-			const ship = {
-				size: ships.shift(),
-				cords: [],
-				fulcrum: []
+		class Ship {
+			constructor(sizeCount) {
+				this.size = sizeCount[0]
+				this.count = sizeCount[1]
+				this.cords = []
+				this.fulcrum = Math.ceil((this.size - 1) / 2)
 			}
+		}
+
+		const placeShip = async () => {
+			const ship = new Ship(ships.shift())
 
 			let row, col
 
@@ -105,7 +120,7 @@ module.exports = {
 				row = +cellCords[1]
 				col = letters.findIndex(l => l === cellCords[0])
 
-				fields[0][row][col] = '[]'
+				fields[0][row][col] = 1
 				collector.stop()
 			})
 
@@ -117,22 +132,17 @@ module.exports = {
 
 		const buttons = new ActionRowBuilder()
 			.addComponents(
-				new ButtonBuilder()
-					.setCustomId('left')
-					.setLabel('⬅️')
-					.setStyle(ButtonStyle.Primary),
-				new ButtonBuilder()
-					.setCustomId('right')
-					.setLabel('➡️')
-					.setStyle(ButtonStyle.Primary),
-				new ButtonBuilder()
-					.setCustomId('down')
-					.setLabel('⬇️')
-					.setStyle(ButtonStyle.Primary),
-				new ButtonBuilder()
-					.setCustomId('up')
-					.setLabel('⬆️')
-					.setStyle(ButtonStyle.Primary),
+				newButton('⬅️', 'left'),
+				newButton('⬇️', 'down'),
+				newButton('⬆️', 'up'),
+				newButton('➡️', 'right')
+			)
+		const buttons2 = new ActionRowBuilder()
+			.addComponents(
+				newButton('🔄', 'rotate'),
+				newButton('↪️', 'turn'),
+				newButton('☑️', 'done'),
+				newButton('Go back', 'back', ButtonStyle.Danger)
 			)
 
 		const extendShip = async (ship, row, col) => {
@@ -143,7 +153,9 @@ module.exports = {
 
 			await fieldMessage.edit({ content: 'Choose a direction to extend the ship (arrows down below)\n```fix\n' + fieldAscii + '```', components: [buttons] })
 			const collector = intr.channel.createMessageComponentCollector({ time: 60_000 })
-			collector.on('collect', i => {
+			collector.on('collect', async i => {
+				await i.deferUpdate()
+
 				switch (i.customId) {
 					case 'left':
 						h = -1
@@ -159,8 +171,8 @@ module.exports = {
 						break;
 				}
 
-				for (let i = 1; i < ship[0]; i++) ship.cords.push([row += v, col += h])
-				ship.cords.forEach(cords => fields[0][cords[0]][cords[1]] = '[]')
+				for (let i = 1; i < ship.size; i++) ship.cords.push([row += v, col += h])
+				replaceCells(ship.cords, 1)
 
 				redrawBoard()
 				collector.stop()
@@ -168,43 +180,76 @@ module.exports = {
 
 			collector.on('end', async collected => {
 				if (collected.size < 0) return intr.user.send('Timeout exceeded. Game is cancelled')
-				moveShip()
+				moveShip(ship)
 			})
 		}
 
-		const moveShip = async () => {
-			const buttons2 = new ActionRowBuilder()
-				.addComponents(
-					new ButtonBuilder()
-						.setCustomId('rotate')
-						.setLabel('🔄')
-						.setStyle(ButtonStyle.Primary),
-					new ButtonBuilder()
-						.setCustomId('turn')
-						.setLabel('↪️')
-						.setStyle(ButtonStyle.Primary),
-					new ButtonBuilder()
-						.setCustomId('done')
-						.setLabel('☑️')
-						.setStyle(ButtonStyle.Success),
-					new ButtonBuilder()
-						.setCustomId('back')
-						.setLabel('Go back')
-						.setStyle(ButtonStyle.Danger),
-				)
-
+		const moveShip = async (ship) => {
 			await fieldMessage.edit({ content: 'Move and rotate your ship. Click ☑️ when you are done\n```fix\n' + fieldAscii + '```', components: [buttons, buttons2] })
-			const collector = intr.channel.createMessageComponentCollector({ time: 60_000 })
-			collector.on('collect', async i => { })
+			const collector = intr.channel.createMessageComponentCollector({ idle: 60_000 })
+
+			collector.on('collect', async i => {
+				await i.deferUpdate()
+				console.log(ship.cords)
+				switch (i.customId) {
+					case 'rotate':
+						const fulcrumCords = ship.cords[ship.fulcrum]
+						for (let i = 0; i < ship.size; i++) {
+							replaceCells(ship.cords, 0)
+
+							const diff = [ship.cords[i][0] - fulcrumCords[0], ship.cords[i][1] - fulcrumCords[1]]
+							ship.cords[i][0] -= diff[0] + diff[1]
+							ship.cords[i][1] += diff[0] - diff[1]
+
+							replaceCells(ship.cords, 1)
+						}
+						break;
+					case 'turn':
+
+						break;
+					default:
+						let h = 0, v = 0
+						switch (i.customId) {
+							case 'left':
+								h = -1
+								break;
+							case 'right':
+								h = 1
+								break;
+							case 'down':
+								v = 1
+								break;
+							case 'up':
+								v = -1
+								break;
+						}
+
+						replaceCells(ship.cords, 0)
+						ship.cords = ship.cords.map(cords => [cords[0] + v, cords[1] + h])
+						replaceCells(ship.cords, 1)
+				}
+
+				redrawBoard()
+				await fieldMessage.edit({ content: 'Move and rotate your ship. Click ☑️ when you are done\n```fix\n' + fieldAscii + '```', components: [buttons, buttons2] })
+			})
+		}
+
+		const replaceCells = (cells, value) => {
+			// wtf
+			for (let i = 0; i < cells.length; i++) fields[0][cells[i][0]][cells[i][1]] = value
 		}
 
 		const redrawBoard = () => {
 			fieldAscii = ' '
 			letters.forEach(l => fieldAscii += ' ' + l)
 
+			const syms = ['| ', '[]', '|•', '><']
+
 			for (let i = 0; i < 10; i++) {
 				fieldAscii += `\n${numbers[i]} `
-				fieldAscii += fields[0][i].join('')
+				for (let k = 0; k < 10; k++) fieldAscii += syms[
+					fields[0][i][k]
+				]
 			}
 		}
 
