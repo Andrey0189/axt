@@ -100,6 +100,12 @@ module.exports = {
 				this.count = sizeCount[1]
 				this.cords = []
 				this.fulcrum = Math.ceil((this.size - 1) / 2)
+
+				this.variations = ['straight', 'angle', 'zigzag']
+				const decrement = this.size === 1 ? 0 : 1
+				this.variations.slice(0, this.size - decrement)
+				// VI: Variation Index
+				this.vi = 0
 			}
 		}
 
@@ -194,18 +200,24 @@ module.exports = {
 				switch (i.customId) {
 					case 'rotate':
 						const fulcrumCords = ship.cords[ship.fulcrum]
-						for (let i = 0; i < ship.size; i++) {
-							replaceCells(ship.cords, 0)
-
-							const diff = [ship.cords[i][0] - fulcrumCords[0], ship.cords[i][1] - fulcrumCords[1]]
-							ship.cords[i][0] -= diff[0] + diff[1]
-							ship.cords[i][1] += diff[0] - diff[1]
-
-							replaceCells(ship.cords, 1)
-						}
+						for (let i = 0; i < ship.size; i++) rotatePartShip(ship.cords, fulcrumCords, i, 1)
 						break;
 					case 'turn':
-
+						if (ship.size < 3) return
+						if (ship.variations[ship.vi] === 'straight') {
+							rotatePartShip(ship.cords, ship.cords[1], 0, 1)
+							ship.vi++
+						} else if (ship.variations[ship.vi] === 'angle' && ship.size < 4) {
+							rotatePartShip(ship.cords, ship.cords[1], 0, -1)
+							ship.vi = 0
+						} else if (ship.variations[ship.vi] === 'angle' && ship.size === 4) {
+							rotatePartShip(ship.cords, ship.cords[2], 3, 1)
+							ship.vi++
+						} else if (ship.variations[ship.vi] === 'zigzag') {
+							rotatePartShip(ship.cords, ship.cords[1], 0, -1)
+							rotatePartShip(ship.cords, ship.cords[2], 3, -1)
+							ship.vi = 0
+						}
 						break;
 					default:
 						let h = 0, v = 0
@@ -232,6 +244,16 @@ module.exports = {
 				redrawBoard()
 				await fieldMessage.edit({ content: 'Move and rotate your ship. Click ☑️ when you are done\n```fix\n' + fieldAscii + '```', components: [buttons, buttons2] })
 			})
+		}
+
+		const rotatePartShip = (cords, fulcrumCords, id, backwards) => {
+			fields[0][cords[id][0]][cords[id][1]] = 0
+
+			const diff = [cords[id][0] - fulcrumCords[0], cords[id][1] - fulcrumCords[1]]
+			cords[id][0] -= (diff[0] + diff[1]) * backwards
+			cords[id][1] += (diff[0] - diff[1])
+
+			fields[0][cords[id][0]][cords[id][1]] = 1
 		}
 
 		const replaceCells = (cells, value) => {
