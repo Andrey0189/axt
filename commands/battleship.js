@@ -47,7 +47,7 @@ export default {
 
 		//await intr.reply('Look DM')
 
-		fieldMessage = await opponent.send('Обед')
+		let fieldMessage = await opponent.send('Обед')
 		/*let fieldMessage
 		const collector = opponent.dmChannel.createMessageComponentCollector({ time: 60_000 })
 		collector.on('collect', async i => {
