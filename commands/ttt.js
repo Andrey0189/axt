@@ -1,6 +1,6 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js')
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js'
 
-module.exports = {
+export default {
 	name: 'tic-tac-toe',
 	options: [{
 		type: 6,

@@ -1,9 +1,9 @@
 // UNFINISHED
 // Coming soon...
 
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js')
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js'
 
-module.exports = {
+export default {
 	name: 'battleship',
 	options: [{
 		type: 6,
@@ -109,9 +109,7 @@ module.exports = {
 			}
 		}
 
-		const placeShip = async () => {
-			const ship = new Ship(ships.shift())
-
+		const placeShip = async (ship) => {
 			let row, col
 
 			redrawBoard()
@@ -132,7 +130,7 @@ module.exports = {
 
 			collector.on('end', async collected => {
 				if (collected.size < 0) return intr.user.send('Timeout exceeded. Game is cancelled')
-				extendShip(ship, row, col)
+				return extendShip(ship, row, col)
 			})
 		}
 
@@ -147,7 +145,7 @@ module.exports = {
 			.addComponents(
 				newButton('🔄', 'rotate'),
 				newButton('↪️', 'turn'),
-				newButton('☑️', 'done'),
+				newButton('☑️', 'done', ButtonStyle.Success),
 				newButton('Go back', 'back', ButtonStyle.Danger)
 			)
 
@@ -186,7 +184,7 @@ module.exports = {
 
 			collector.on('end', async collected => {
 				if (collected.size < 0) return intr.user.send('Timeout exceeded. Game is cancelled')
-				moveShip(ship)
+				return moveShip(ship)
 			})
 		}
 
@@ -214,11 +212,25 @@ module.exports = {
 							rotatePartShip(ship.cords, ship.cords[2], 3, 1)
 							ship.vi++
 						} else if (ship.variations[ship.vi] === 'zigzag') {
-							rotatePartShip(ship.cords, ship.cords[1], 0, -1)
-							rotatePartShip(ship.cords, ship.cords[2], 3, -1)
+							replaceCells(ship.cords, 0)
+
+							const parallel = ship.cords[1].findIndex((cord, i) => cord === ship.cords[2][i])
+							// if parallel == 1, then perpendicular == 0. if parallel == 0, then perpendicular == 1
+							const perpendicular = parallel + 1 - parallel - parallel
+
+							ship.cords[0][perpendicular] += perpendicular - parallel
+							ship.cords[0][parallel] = ship.cords[1][parallel]
+							ship.cords[3][perpendicular] -= perpendicular - parallel
+							ship.cords[3][parallel] = ship.cords[1][parallel]
+
+							replaceCells(ship.cords, 1)
 							ship.vi = 0
 						}
 						break;
+					case 'done':
+						collector.stop('done')
+						if (ships.length > 0) return placeShip(new Ship(ships.shift()))
+						else return intr.user.send('Насрал обедом')
 					default:
 						let h = 0, v = 0
 						switch (i.customId) {
@@ -243,6 +255,11 @@ module.exports = {
 
 				redrawBoard()
 				await fieldMessage.edit({ content: 'Move and rotate your ship. Click ☑️ when you are done\n```fix\n' + fieldAscii + '```', components: [buttons, buttons2] })
+			})
+
+			collector.on('end', async (_, reason) => {
+				if (reason && reason !== 'done') return intr.user.send('Timeout exceeded. Game is cancelled')
+				return moveShip(ship)
 			})
 		}
 
@@ -275,6 +292,6 @@ module.exports = {
 			}
 		}
 
-		placeShip()
+		placeShip(new Ship(ships.shift()))
 	}
 }

@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "GPL-3.0-or-later",
   "dependencies": {
+    "chatgpt": "^5.2.2",
     "discord.js": "^14.8.0"
   },
   "devDependencies": {

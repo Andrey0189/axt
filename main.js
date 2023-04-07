@@ -1,13 +1,14 @@
-const Discord = require('discord.js')
-const fs = require('fs')
-const conf = require('./config.js')
+import Discord from 'discord.js'
+import fs from 'fs'
+import conf from './config.js'
 
 const commands = []
 fs.readdir('./commands', (err, files) => {
 	if (err) throw err
-	files.forEach(cmdFile => {
+	files.forEach(async cmdFile => {
 		console.log(`Loading ${cmdFile}...`)
-		const cmd = require(`./commands/${cmdFile}`)
+		const cmdobj = await import(`./commands/${cmdFile}`)
+		const cmd = cmdobj.default
 		commands.push(cmd)
 	})
 })
