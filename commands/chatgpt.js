@@ -1,5 +1,3 @@
-import { ChatGPTAPI } from 'chatgpt'
-
 export default {
 	name: 'chatgpt',
 	options: [{
@@ -10,17 +8,21 @@ export default {
 	}],
 	description: 'Ask the real ChatGPT-4',
 	run: async (intr) => {
-		//await intr.deferReply()
-		await intr.reply('Loading...')
-		const prompt = intr.options.data[0].value
-		const api = new ChatGPTAPI({
-			apiKey: process.env.OPENAI_API_KEY
-		})
-		const res = await api.sendMessage(prompt)
-		const output = res.text
-			.replace('*', '\*')
-			.replace('_', '\_')
-			.replace('~', '\~')
-		intr.editReply(output)
+		try {
+			await intr.reply('Loading...')
+			const prompt = intr.options.data[0].value
+
+			const res = await Bot.ChatGPTAPI.sendMessage(prompt)
+			const output = res.text
+				.replace('*', '\*')
+				.replace('_', '\_')
+				.replace('~', '\~')
+
+			intr.editReply(output)
+				.catch(_ => console.log(`The output is too big. Logging the answer to the console: ${res.text}`))
+		} catch (e) {
+			intr.channel.send('Something went wrong lmao')
+			console.log(e)
+		}
 	}
 }
