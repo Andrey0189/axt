@@ -1,2 +1,2 @@
-# axt
+# Axt
 Axt: Minigames Bot reborn
