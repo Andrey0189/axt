@@ -12,6 +12,8 @@ class Bot {
 			apiKey: process.env.OPENAI_API_KEY
 		})
 
+		this.ChatGPTMessagesID = {}
+
 		this.commands = []
 		fs.readdir('./commands', (err, files) => {
 			if (err) throw err
@@ -43,6 +45,7 @@ class Bot {
 				console.log(err)
 			}
 			console.log(`Logged in as ${this.client.user.tag}`)
+			this.client.user.setActivity('public masturbation', { type: Discord.ActivityType.Competing });
 		})
 
 		this.client.on('interactionCreate', async interaction => {
