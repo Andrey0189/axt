@@ -9,11 +9,12 @@ export default {
 	description: 'Eval JS code',
 	private: true,
 	run: async (intr) => {
+		await intr.deferReply()
 		try {
 			const result = eval(intr.options.data[0].value)
-			await intr.reply(`\`\`\`js\n// Success ✅\n${result}\`\`\``)
+			await intr.editReply(`\`\`\`js\n// Success ✅\n${result}\`\`\``)
 		} catch (err) {
-			await intr.reply(`\`\`\`js\n// Error ❎\n${err}\`\`\``)
+			await intr.editReply(`\`\`\`js\n// Error ❎\n${err}\`\`\``)
 		}
 	}
 }
