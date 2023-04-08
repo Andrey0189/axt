@@ -2,12 +2,14 @@ import Discord from 'discord.js'
 import fs from 'fs'
 import conf from './config.js'
 import { ChatGPTAPI } from 'chatgpt'
+import child_process from 'child_process'
 
 class Bot {
 	constructor() {
 		this.Discord = Discord
 		this.fs = fs
 		this.conf = conf
+		this.child_process = child_process
 		this.ChatGPTAPI = new ChatGPTAPI({
 			apiKey: process.env.OPENAI_API_KEY
 		})
