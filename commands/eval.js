@@ -11,7 +11,7 @@ export default {
 	run: async (intr) => {
 		await intr.deferReply()
 		try {
-			const result = eval(intr.options.data[0].value)
+			const result = await eval(intr.options.data[0].value)
 			await intr.editReply(`\`\`\`js\n// Success ✅\n${result}\`\`\``)
 		} catch (err) {
 			await intr.editReply(`\`\`\`js\n// Error ❎\n${err}\`\`\``)
