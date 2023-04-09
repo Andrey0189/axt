@@ -1,8 +1,9 @@
 import Discord from 'discord.js'
 import fs from 'fs'
-import conf from './config.js'
 import { ChatGPTAPI } from 'chatgpt'
 import child_process from 'child_process'
+import ms from 'ms'
+import conf from './config.js'
 
 class Bot {
 	constructor() {
@@ -10,6 +11,7 @@ class Bot {
 		this.fs = fs
 		this.conf = conf
 		this.child_process = child_process
+		this.ms = ms
 		this.ChatGPTAPI = new ChatGPTAPI({
 			apiKey: process.env.OPENAI_API_KEY
 		})
@@ -30,11 +32,14 @@ class Bot {
 		this.client = new Discord.Client({
 			intents: [
 				Discord.GatewayIntentBits.Guilds,
+				Discord.GatewayIntentBits.GuildMembers,
 				Discord.GatewayIntentBits.GuildMessages,
 				Discord.GatewayIntentBits.DirectMessages,
 				Discord.GatewayIntentBits.MessageContent
 			]
 		})
+
+		this.messageToTxt = (text) => new Discord.AttachmentBuilder(Buffer.from(text), { name: 'output.txt' });
 
 		const rest = new Discord.REST({ version: '10' }).setToken(conf.TOKEN)
 
