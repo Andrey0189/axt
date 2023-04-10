@@ -39,7 +39,7 @@ export default {
 
 			Bot.ChatGPTMessagesID[reply.id] = res.id
 
-			const filter = msg => !msg.system && Bot.ChatGPTMessagesID[msg?.reference?.messageId] === reply.id && msg.author.id === intr.user.id
+			const filter = msg => !msg.system && Bot.ChatGPTMessagesID[msg?.reference?.messageId] && msg?.reference?.messageId === reply.id && msg.author.id === intr.user.id
 			const collector = intr.channel.createMessageCollector({ filter, idle: 300_000 })
 			collector.on('collect', async msg => {
 				const newReply = await msg.reply('Waiting for ChatGPT to generate a reply...')
