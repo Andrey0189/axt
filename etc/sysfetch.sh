@@ -30,8 +30,8 @@ cat <<EOF
 [┇][       /  \\       ] = <OS:      ${os}>
 [┇][      /\`'.,\\      ] = <KERNEL:  ${kernel}>
 [┇][     /     ',     ] = <UPTIME:  ${uptime}>
-[┇][    /      ,\`\\    ] = <PCKGS:  ${packages}>
-[┇][   /   ,.'\`.  \\   ] = <RAM:    ${mem}>
+[┇][    /      ,\`\\    ] = <PCKGS:   ${packages}>
+[┇][   /   ,.'\`.  \\   ] = <RAM:   ${mem}>
 [┇][  /.,'\`     \`'.\\  ] = <WM:      ${ui}>
 
 EOF

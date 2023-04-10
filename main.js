@@ -16,7 +16,7 @@ class Bot {
 			apiKey: process.env.OPENAI_API_KEY
 		})
 
-		this.ChatGPTMessagesID = {}
+		this.ChatGPTMessages = []
 
 		this.commands = []
 		fs.readdir('./commands', (err, files) => {
