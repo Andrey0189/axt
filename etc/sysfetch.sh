@@ -8,7 +8,7 @@ packages="$(pacman -Q | wc -l)"
 mem="$(free --mega | awk '/Mem:/ { printf("%5sMB / %sMB\n", $3, $2) }')"
 
 if [[ $packages -eq 0 ]]; then
-  packages=$(yum list installed | wc -l)
+  packages=$(dpkg-query -f '${binary:Package}\n' -W | wc -l)
 fi
 
 parse_rcs() {
@@ -27,11 +27,11 @@ fi
 cat <<EOF
 
 [┇][        /\\        ] = [${USER}@${host}][\]
-[┇][       /  \\       ] = <OS:        ${os}>
-[┇][      /\`'.,\\      ] = <KERNEL:    ${kernel}>
-[┇][     /     ',     ] = <UPTIME:    ${uptime}>
-[┇][    /      ,\`\\    ] = <PACKAGES:  ${packages}>
-[┇][   /   ,.'\`.  \\   ] = <RAM:      ${mem}>
-[┇][  /.,'\`     \`'.\\  ] = <WM:        ${ui}>
+[┇][       /  \\       ] = <OS:      ${os}>
+[┇][      /\`'.,\\      ] = <KERNEL:  ${kernel}>
+[┇][     /     ',     ] = <UPTIME:  ${uptime}>
+[┇][    /      ,\`\\    ] = <PCKGS:   ${packages}>
+[┇][   /   ,.'\`.  \\   ] = <RAM:   ${mem}>
+[┇][  /.,'\`     \`'.\\  ] = <WM:      ${ui}>
 
 EOF
