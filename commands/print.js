@@ -6,6 +6,6 @@ export default {
 		description: 'скажи это слово',
 		required: true
 	}],
-	description: 'print a phase',
+	description: 'print a phrase',
 	run: (intr) => { intr.reply(intr.options.data[0].value) }
 }
