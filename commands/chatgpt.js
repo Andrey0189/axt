@@ -1,4 +1,4 @@
-import ms from "ms"
+import { ApplicationCommandOptionChannelTypesMixin } from "discord.js"
 
 export default {
 	name: 'chatgpt',
@@ -21,7 +21,10 @@ export default {
 
 			const askChatGPT = async (prompt, parentMsg) => {
 				return await Bot.ChatGPTAPI.sendMessage(prompt, {
-					parentMessageId: parentMsg
+					parentMessageId: parentMsg,
+					/*completionParams: {
+						model: 'text-davinci-003'
+					}*/
 				})
 			}
 
@@ -39,21 +42,28 @@ export default {
 
 			const reply = await getReply()
 
-			await Bot.ChatGPTMessages.filter(m => m.userID !== msg.author.id)
-			const chatgptInteractionIndex = Bot.ChatGPTMessages.push({
+			Bot.ChatGPTMessages = await Bot.ChatGPTMessages.filter(m => m.userID !== intr.user.id)
+			Bot.ChatGPTMessages.push({
 				userID: intr.user.id,
+				interactionID: intr.id,
 				lastReplyID: reply.id,
 				lastToken: res.id
-			}) - 1
+			})
 
 			const filter = msg => {
-				const m = Bot.ChatGPTMessages.find(m => m.userID === msg.author.id)
-				return !msg.system && m && msg.reference.messageId === m.lastReplyID
+				const m = Bot.ChatGPTMessages.find(m => m.userID === msg.author.id && m.interactionID === intr.id)
+				//console.log(msg.author.id, intr.user.id)
+				return !msg.system && m && msg.reference?.messageId === m?.lastReplyID && msg.author.id === intr.user.id
 			}
-			const collector = intr.channel.createMessageCollector({ filter, idle: 300_000 })
+
+			const channel = intr.channel ?? intr.user.dmChannel
+			const collector = channel.createMessageCollector({ filter, idle: 300_000 })
 			collector.on('collect', async msg => {
+				const lastInteraction = Bot.ChatGPTMessages.find(m => m.userID === msg.author.id)
+				//if (!lastInteraction) return collector.stop()
+
 				const newReply = await msg.reply('Waiting for ChatGPT to generate a reply...')
-				const res = await askChatGPT(msg.content, Bot.ChatGPTMessages[chatgptInteractionIndex].lastToken)
+				const res = await askChatGPT(msg.content, lastInteraction.lastToken)
 
 				const output = fixText(res.text)
 				if (output.length > 1980) {
@@ -61,14 +71,14 @@ export default {
 					await newReply.edit({ content: 'Output is too big. Sending it as a text file:', files: [outputTxt] });
 				} else await newReply.edit(output)
 
-				Bot.ChatGPTMessages[chatgptInteractionIndex].lastReplyID = newReply.id
-				Bot.ChatGPTMessages[chatgptInteractionIndex].lastToken = res.id
+				lastInteraction.lastReplyID = newReply.id
+				lastInteraction.lastToken = res.id
 			})
 
 
 			collector.on('end', async collected => {
-				const id = collected.last()?.reference?.messageId
-				delete Bot.ChatGPTMessages[id]
+				const userID = collected.last()?.author?.id
+				await Bot.ChatGPTMessages.filter(m => m.userID !== userID)
 			})
 
 		} catch (e) {
