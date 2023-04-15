@@ -6,7 +6,7 @@ export default {
 		description: 'What do you want to ask?',
 		required: true
 	}],
-	private: true,
+	private: false,
 	description: 'Ask the real ChatGPT',
 	run: async (intr) => {
 		// const obed = '1094010572665790585'
