@@ -1,5 +1,3 @@
-import { ApplicationCommandOptionChannelTypesMixin } from "discord.js"
-
 export default {
 	name: 'chatgpt',
 	options: [{
@@ -8,11 +6,11 @@ export default {
 		description: 'What do you want to ask?',
 		required: true
 	}],
-	private: false,
-	description: 'Ask the real ChatGPT-4',
+	private: true,
+	description: 'Ask the real ChatGPT',
 	run: async (intr) => {
-		//const obed = '1094010572665790585'
-		//if (intr.channel.id !== obed) return intr.reply(`Go to <#${obed}>`)
+		// const obed = '1094010572665790585'
+		// if (intr.channel.id !== obed) return intr.reply(`Go to <#${obed}>`)
 		try {
 			const fixText = (text) => text
 				.replace('*', '\*')
@@ -22,14 +20,11 @@ export default {
 			const askChatGPT = async (prompt, parentMsg) => {
 				return await Bot.ChatGPTAPI.sendMessage(prompt, {
 					parentMessageId: parentMsg,
-					/*completionParams: {
-						model: 'text-davinci-003'
-					}*/
 				})
 			}
 
 			await intr.reply('Waiting for ChatGPT to generate a reply...')
-			const prompt = intr.options.data[0].value.replace('!Become DAN', Bot.conf.DANcopypasta)
+			const prompt = intr.options.data[0]// .value.replace('!Become NRAF', Bot.conf.NRAFcopypasta)
 			const res = await askChatGPT(prompt, null)
 			const output = fixText(res.text)
 
@@ -52,7 +47,6 @@ export default {
 
 			const filter = msg => {
 				const m = Bot.ChatGPTMessages.find(m => m.userID === msg.author.id && m.interactionID === intr.id)
-				//console.log(msg.author.id, intr.user.id)
 				return !msg.system && m && msg.reference?.messageId === m?.lastReplyID && msg.author.id === intr.user.id
 			}
 
@@ -60,7 +54,6 @@ export default {
 			const collector = channel.createMessageCollector({ filter, idle: 300_000 })
 			collector.on('collect', async msg => {
 				const lastInteraction = Bot.ChatGPTMessages.find(m => m.userID === msg.author.id)
-				//if (!lastInteraction) return collector.stop()
 
 				const newReply = await msg.reply('Waiting for ChatGPT to generate a reply...')
 				const res = await askChatGPT(msg.content, lastInteraction.lastToken)
@@ -83,6 +76,7 @@ export default {
 
 		} catch (e) {
 			intr.channel.send(`Something went wrong lmao\n\`\`\`js\n${e}\`\`\``)
+			console.log(e)
 		}
 	}
 }

@@ -115,7 +115,7 @@ export default {
 			redrawBoard()
 
 			await fieldMessage.edit('Enter coordinates to place your ship. Example: `h6`\n```fix\n' + fieldAscii + '```')
-
+			
 			const regex = /[a-j][0-9]/i
 			const filter = m => m.content.match(regex)
 			const collector = intr.user.dmChannel.createMessageCollector({ filter, time: 60_000 })
