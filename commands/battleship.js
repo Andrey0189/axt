@@ -14,7 +14,7 @@ export default {
 	description: 'Play battleship',
 	private: true,
 	run: async (intr) => {
-		const opponent = intr.options.data[0].user
+		const opponent = intr.options.get('opponent').user
 		if (opponent.bot) return intr.reply({ content: 'You cannot play with bots, dumbass', ephemeral: true })
 		//if (opponent.id === intr.user.id) return intr.reply({ content: 'You cannot play yourself, dumbass', ephemeral: true })
 
@@ -115,7 +115,7 @@ export default {
 			redrawBoard()
 
 			await fieldMessage.edit('Enter coordinates to place your ship. Example: `h6`\n```fix\n' + fieldAscii + '```')
-			
+
 			const regex = /[a-j][0-9]/i
 			const filter = m => m.content.match(regex)
 			const collector = intr.user.dmChannel.createMessageCollector({ filter, time: 60_000 })

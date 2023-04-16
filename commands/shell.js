@@ -11,7 +11,7 @@ export default {
 	run: async (intr) => {
 		await intr.deferReply()
 		try {
-			const code = intr.options.data[0].value
+			const code = intr.options.get('code').value
 			const result = await Bot.child_process.execSync(code)
 			if (result.length > 1980) {
 				const output = Bot.messageToTxt(result)

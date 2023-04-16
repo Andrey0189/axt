@@ -1,4 +1,4 @@
-import { EmbedBuilder } from 'discord.js'
+import { EmbedBuilder, time } from 'discord.js'
 
 export default {
 	name: 'embed',
@@ -87,13 +87,7 @@ export default {
 	description: 'Create an embed',
 	run: async (intr) => {
 		await intr.deferReply({ ephemeral: true })
-
-		const arg = (argument) => {
-			const found = intr.options.get(argument)
-			if (found) return found.value
-		}
-
-		const check = (argument) => arg(argument) ?? null
+		const check = (argument) => intr.options.get(argument)?.value ?? null
 
 		try {
 			const embed = new EmbedBuilder()
@@ -108,7 +102,8 @@ export default {
 				.setImage(check('img'))
 				.setFooter({ text: check('footer-text'), iconURL: check('footer-icon') });
 
-			if (arg('timestamp')) embed.setTimestamp(check('custom-timestamp'))
+			const timestamp = check('custom-timestamp') ?? Date.now()
+			if (check('timestamp')) embed.setTimestamp(timestamp)
 
 
 			intr.channel.send({ embeds: [embed] })

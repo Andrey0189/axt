@@ -11,7 +11,8 @@ export default {
 	run: async (intr) => {
 		await intr.deferReply()
 		try {
-			const result = await eval(intr.options.data[0].value)
+			const code = intr.options.get('code').value
+			const result = await eval(code)
 			if (String(result).length > 1980) {
 				const output = Bot.messageToTxt(result)
 				intr.editReply({ content: 'Output is too big. Sending it as a text file:', files: [output] });

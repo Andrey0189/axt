@@ -62,7 +62,7 @@ class Bot {
 				if (command.private && !this.conf.whitelist.find(id => id === commandMessage.user.id)) return await commandMessage.reply('You don\'t have permission to execute this command')
 				command.run(commandMessage)
 			}
-		} 
+		}
 
 		this.client.on('interactionCreate', async interaction => {
 			if (!interaction.isChatInputCommand()) return
