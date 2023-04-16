@@ -24,7 +24,7 @@ export default {
 			}
 
 			await intr.reply('Waiting for ChatGPT to generate a reply...')
-			const prompt = intr.options.data[0]// .value.replace('!Become NRAF', Bot.conf.NRAFcopypasta)
+			const prompt = intr.options.data[0].value //.replace('!Become NRAF', Bot.conf.NRAFcopypasta)
 			const res = await askChatGPT(prompt, null)
 			const output = fixText(res.text)
 

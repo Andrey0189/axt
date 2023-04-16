@@ -18,6 +18,7 @@ class Bot {
 
 		this.ChatGPTMessages = []
 
+		this.prefix = '='
 		this.commands = []
 		fs.readdir('./commands', (err, files) => {
 			if (err) throw err
@@ -55,15 +56,31 @@ class Bot {
 			this.client.user.setActivity('public masturbation', { type: Discord.ActivityType.Competing });
 		})
 
+		const commandHandler = async (writtenCommand, commandMessage) => {
+			const command = this.commands.find(c => c.name === writtenCommand)
+			if (command) {
+				if (command.private && !this.conf.whitelist.find(id => id === commandMessage.user.id)) return await commandMessage.reply('You don\'t have permission to execute this command')
+				command.run(commandMessage)
+			}
+		} 
+
 		this.client.on('interactionCreate', async interaction => {
 			if (!interaction.isChatInputCommand()) return
-
-			const command = this.commands.find(c => c.name === interaction.commandName)
-			if (command) {
-				if (command.private && !this.conf.whitelist.find(id => id === interaction.user.id)) return await interaction.reply('You don\'t have permission to execute this command')
-				command.run(interaction)
-			}
+			commandHandler(interaction.commandName, interaction)
 		})
+
+		/*this.client.on('messageCreate', async message => {
+			if (message.author.bot || !message.guild || !message.content.startsWith(this.prefix)) return
+
+			const args = message.content.slice(this.prefix.length).trim().split(/ +/g)
+			const writtenCommand = args.shift()
+
+			message.user = message.author
+			message.options = {data: [{value: args[0]}]}
+			message.editReply() = message.reply()
+			
+			commandHandler(writtenCommand, message)
+		})*/
 
 		this.client.login(conf.TOKEN)
 	}
