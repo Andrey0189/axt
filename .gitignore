@@ -3,3 +3,5 @@ package-lock.json
 .eslintrc.js
 start.sh
 fly.toml
+.dockerignore
+Dockerfile
