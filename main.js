@@ -18,7 +18,7 @@ class Bot {
 
 		this.ChatGPTMessages = []
 
-		this.prefix = '='
+		// this.prefix = '='
 		this.commands = []
 		fs.readdir('./commands', (err, files) => {
 			if (err) throw err
@@ -69,6 +69,7 @@ class Bot {
 			commandHandler(interaction.commandName, interaction)
 		})
 
+		// TODO: Non-slash commands
 		/*this.client.on('messageCreate', async message => {
 			if (message.author.bot || !message.guild || !message.content.startsWith(this.prefix)) return
 
